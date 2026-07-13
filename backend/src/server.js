@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const stockRoutes = require('./routes/stockRoutes');
 
@@ -14,11 +15,24 @@ connectDB();
 
 const app = express();
 
+// Rate limiter: limit each IP to 300 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  message: {
+    success: false,
+    message: 'Too many requests from this IP, please try again after 15 minutes.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Middlewares
 app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
+app.use('/api', limiter);
 
 // Routes
 app.use('/api/stocks', stockRoutes);
